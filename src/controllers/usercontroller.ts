@@ -74,3 +74,23 @@ export const loginUser = (req: Request, res: Response): void => {
     res.status(500).json({ error: error.message });
   }
 };
+
+
+export const updateUser = (req: Request, res: Response) : void =>{
+  const {id} = req.params;
+  const {name, email} = req.body as {
+    name: string,
+    email:string
+};
+ db.query(
+    "UPDATE users SET name = ?, email = ? WHERE id = ?",
+    [name, email, id],
+    (err) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json({ message: "User updated successfully" });
+    }
+  );
+} 
