@@ -1,11 +1,12 @@
-import express from "express"
-const app = express()
-const port = 3000
+import express from 'express';
+import dotenv from 'dotenv'
+import routes from './routes/userRoutes.ts';
+dotenv.config()
 
-app.get('/', (req:any, res:any) => {
-  res.send('Hello World!')
-})
+const port = process.env.SERVER_PORT
+const app = express();
+app.use(express.json());
 
-app.listen(port, () => {
-  console.log(`Examples app listening on port ${port}`)
-})
+app.use('/api/users', routes);
+
+app.listen(process.env.SERVER_PORT, () => console.log(`Server running on port http://localhost:${port}`));
