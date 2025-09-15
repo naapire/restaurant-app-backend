@@ -1,10 +1,12 @@
 import express from "express";
-import { loginUser, signUp, updateUser } from "../controllers/usercontroller.ts";
+import {  deleteUser, getAllUsers, loginUser, signUp, updateUser } from "../controllers/usercontroller.ts";
 
 const routes = express.Router();
 
 routes.post("/signup", signUp);
 routes.post("/logIn", loginUser);
 routes.put('/:id', updateUser);
+routes.delete("/:id", deleteUser)
+routes.get("/users", getAllUsers);
 
-export default routes;
+export default routes

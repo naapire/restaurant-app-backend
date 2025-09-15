@@ -3,6 +3,7 @@ import db from "../config/db.ts";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 
+
 dotenv.config();
 
 export const signUp = async (req: Request, res: Response): Promise<void> => {
@@ -94,3 +95,26 @@ export const updateUser = (req: Request, res: Response) : void =>{
     }
   );
 } 
+
+export const deleteUser = (req: Request, res: Response): void => {
+  const { id } = req.params;
+
+  db.query("DELETE FROM users WHERE id = ?", [id], (err) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({ message: "User deleted successfully" });
+  });
+};
+
+export const getAllUsers = (req: Request, res: Response): void => {
+  db.query("SELECT id, name, email, location, role FROM users", (err, results) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+
+    res.json(results);
+  });
+};
