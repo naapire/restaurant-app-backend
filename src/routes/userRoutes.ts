@@ -1,9 +1,11 @@
 import express from "express";
 import {  deleteUser, getAllUsers, loginUser, signUp, updateUser } from "../controllers/usercontroller.ts";
 import { createRestaurant, deleteRestaurant, getAllRestaurant, getRestaurantById, updateRestaurant } from "../controllers/restaurantcontrollers.ts";
+import { createMenu, getMenus, getMenuById, updateMenu, deleteMenu } from "../controllers/menucontroller.ts";
 
 
 const routes = express.Router();
+
 
 /**
  * @swagger
@@ -60,6 +62,21 @@ const routes = express.Router();
  *           type: string
  *         location:
  *           type: string
+ *     Menu:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         name:
+ *           type: string
+ *         promotionDetails:
+ *           type: string
+ *         is_available:
+ *           type: boolean
+ *         image_url:
+ *           type: string
+ *         restaurant_id:
+ *           type: integer
  */
 
 /**
@@ -265,5 +282,121 @@ routes.put("/restaurants/:id", updateRestaurant);
  *         description: Restaurant deleted successfully
  */
 routes.delete("/restaurants/:id", deleteRestaurant);
+/** 
+* @swagger
+ * /restaurants/{restaurantId}/menus:
+ *   post:
+ *     summary: Create a menu for a restaurant
+ *     tags: [Menus]
+ *     parameters:
+ *       - in: path
+ *         name: restaurantId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Menu'
+ *     responses:
+ *       201:
+ *         description: Menu created successfully
+ */
+routes.post("/restaurants/:restaurantId/menus", createMenu);
+
+/**
+ * @swagger
+ * /restaurants/{restaurantId}/menus:
+ *   get:
+ *     summary: Get all menus for a restaurant
+ *     tags: [Menus]
+ *     parameters:
+ *       - in: path
+ *         name: restaurantId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: List of menus
+ */
+routes.get("/restaurants/:restaurantId/menus", getMenus);
+
+/**
+ * @swagger
+ * /restaurants/{restaurantId}/menus/{menuId}:
+ *   get:
+ *     summary: Get a menu by ID for a restaurant
+ *     tags: [Menus]
+ *     parameters:
+ *       - in: path
+ *         name: restaurantId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: menuId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Menu object
+ */
+routes.get("/restaurants/:restaurantId/menus/:menuId", getMenuById);
+
+/**
+ * @swagger
+ * /restaurants/{restaurantId}/menus/{menuId}:
+ *   put:
+ *     summary: Update a menu by ID for a restaurant
+ *     tags: [Menus]
+ *     parameters:
+ *       - in: path
+ *         name: restaurantId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: menuId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Menu'
+ *     responses:
+ *       200:
+ *         description: Menu updated successfully
+ */
+routes.put("/restaurants/:restaurantId/menus/:menuId", updateMenu);
+
+/**
+ * @swagger
+ * /restaurants/{restaurantId}/menus/{menuId}:
+ *   delete:
+ *     summary: Delete a menu by ID for a restaurant
+ *     tags: [Menus]
+ *     parameters:
+ *       - in: path
+ *         name: restaurantId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: menuId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Menu deleted successfully
+ */
+routes.delete("/restaurants/:restaurantId/menus/:menuId", deleteMenu);
 
 export default routes;
