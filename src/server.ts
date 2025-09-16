@@ -1,12 +1,17 @@
-import express from 'express';
-import dotenv from 'dotenv'
-import routes from './routes/userRoutes.ts';
-dotenv.config()
+import express from "express";
+import dotenv from "dotenv";
+import routes from "./routes/userRoutes.ts";
+import { swaggerDocs } from "./config/swagger.ts";
+dotenv.config();
 
-const port = process.env.SERVER_PORT
+const port = Number(process.env.SERVER_PORT) || 5000 ;
 const app = express();
 app.use(express.json());
 
-app.use('/api', routes);
+app.use("/api", routes);
 
-app.listen(process.env.SERVER_PORT, () => console.log(`Server running on port http://localhost:${port}`));
+swaggerDocs(app, port)
+
+app.listen(port, () =>
+  console.log(`Server running on port http://localhost:${port}`)
+);
