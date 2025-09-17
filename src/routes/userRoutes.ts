@@ -1,7 +1,9 @@
 import express from "express";
-import { deleteUser, getAllUsers, loginUser, signUp, updateUser } from "../controllers/usercontroller.ts";
+import {  deleteUser, getAllUsers, loginUser, signUp, updateUser } from "../controllers/usercontroller.ts";
 
-const userRoutes = express.Router();
+
+const routes = express.Router();
+
 
 /**
  * @swagger
@@ -47,6 +49,32 @@ const userRoutes = express.Router();
  *           type: string
  *         password:
  *           type: string
+ *     Restaurant:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         restaurant_name:
+ *           type: string
+ *         address:
+ *           type: string
+ *         location:
+ *           type: string
+ *     Menu:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         name:
+ *           type: string
+ *         promotionDetails:
+ *           type: string
+ *         is_available:
+ *           type: boolean
+ *         image_url:
+ *           type: string
+ *         restaurant_id:
+ *           type: integer
  */
 
 /**
@@ -55,8 +83,17 @@ const userRoutes = express.Router();
  *   post:
  *     summary: Register a new user
  *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/SignUpRequest'
+ *     responses:
+ *       200:
+ *         description: User created successfully
  */
-userRoutes.post("/signup", signUp);
+routes.post("/signup", signUp);
 
 /**
  * @swagger
@@ -64,8 +101,17 @@ userRoutes.post("/signup", signUp);
  *   post:
  *     summary: Login user
  *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: Login successful
  */
-userRoutes.post("/logIn", loginUser);
+routes.post("/logIn", loginUser);
 
 /**
  * @swagger
@@ -73,8 +119,28 @@ userRoutes.post("/logIn", loginUser);
  *   put:
  *     summary: Update a user by id
  *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User updated successfully
  */
-userRoutes.put("/:id", updateUser);
+routes.put("/:id", updateUser);
 
 /**
  * @swagger
@@ -82,8 +148,17 @@ userRoutes.put("/:id", updateUser);
  *   delete:
  *     summary: Delete a user by id
  *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
  */
-userRoutes.delete("/:id", deleteUser);
+routes.delete("/:id", deleteUser);
 
 /**
  * @swagger
@@ -91,7 +166,12 @@ userRoutes.delete("/:id", deleteUser);
  *   get:
  *     summary: Get all users
  *     tags: [Users]
+ *     responses:
+ *       200:
+ *         description: List of users
  */
-userRoutes.get("/users", getAllUsers);
+routes.get("/users", getAllUsers);
 
-export default userRoutes;
+
+
+export default routes;

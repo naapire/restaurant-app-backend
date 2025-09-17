@@ -10,8 +10,6 @@ const menuRoutes = express.Router();
  *     Menu:
  *       type: object
  *       properties:
- *         id:
- *           type: integer
  *         name:
  *           type: string
  *         promotionDetails:
@@ -20,8 +18,6 @@ const menuRoutes = express.Router();
  *           type: boolean
  *         image_url:
  *           type: string
- *         restaurant_id:
- *           type: integer
  */
 
 /** 

@@ -10,8 +10,8 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, email, password, location, role } = req.body as {
       name: string;
-      password: string;
       email: string;
+      password: string;
       location: string;
       role: string;
     };
@@ -20,24 +20,50 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ message: "All details must be provided" });
       return;
     }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Insert into users table
     db.query(
-      "INSERT INTO users(name, email, password, location, role) VALUES(?,?,?,?,?)",
+      "INSERT INTO users (name, email, password, location, role) VALUES (?, ?, ?, ?, ?)",
       [name, email, hashedPassword, location, role || "customer"],
-      (err) => {
+      (err, result) => {
         if (err) {
           res.status(500).json({ error: err.message });
           return;
         }
-        res.json({ message: "User signup successfully" });
+
+        const userId = (result as any).insertId;
+
+        // If role is rider, also insert into riders table
+        if (role && role.toLowerCase() === "rider") {
+          db.query(
+            "INSERT INTO riders (user_id, availability_status, rating) VALUES (?, 'offline', NULL)",
+            [userId],
+            (riderErr) => {
+              if (riderErr) {
+                res.status(500).json({ error: riderErr.message });
+                return;
+              }
+
+              res.status(201).json({
+                message: "Rider signup successful",
+                userId,
+              });
+            }
+          );
+        } else {
+          res.status(201).json({
+            message: "User signup successful",
+            userId,
+          });
+        }
       }
     );
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 };
-
 
 export const loginUser = (req: Request, res: Response): void => {
   try {

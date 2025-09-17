@@ -5,6 +5,7 @@ import restaurantRoutes from "./routes/restaurantsRoutes.ts";
 import menuRoutes from "./routes/menuRoutes.ts";
 import { swaggerDocs } from "./config/swagger.ts";
 import menuItemRoutes from "./routes/itemsRoutes.ts";
+import riderRoutes from "./routes/riderRoutes.ts";
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use("/api", userRoutes);
 app.use("/api", restaurantRoutes);
 app.use("/api", menuRoutes);
 app.use("/api", menuItemRoutes);
+app.use("/api", riderRoutes)
 
 // Swagger documentation
 swaggerDocs(app, port);

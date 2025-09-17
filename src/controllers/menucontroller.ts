@@ -5,28 +5,35 @@ import type{ RowDataPacket } from "mysql2";
 export const createMenu = (req: Request, res: Response): void => {
   const { restaurantId } = req.params;
   const { name, promotionDetails, is_available, image_url } = req.body as {
-    name: string,
-    promotionDetails: string,
-    is_available: boolean,
-    image_url: string
+    name: string;
+    promotionDetails?: string;
+    is_available?: boolean;
+    image_url?: string;
   };
-    if (!name || !is_available || image_url){
-        res.status(400).json({message: "must provide all credentials"});
-        return;
-    }
+
+  if (!name) {
+    res.status(400).json({ message: "Menu name is required" });
+    return;
+  }
 
   db.query(
     "INSERT INTO menu (name, promotionDetails, is_available, image_url, restaurant_id) VALUES (?, ?, ?, ?, ?)",
-    [name, promotionDetails, is_available ?? true, image_url, restaurantId],
+    [name, promotionDetails || null, is_available ?? true, image_url || null, restaurantId],
     (err, result) => {
       if (err) {
         res.status(500).json({ error: err.message });
         return;
       }
-      res.status(201).json({ message: "Menu created successfully", menuId: (result as any).insertId });
+      res
+        .status(201)
+        .json({
+          message: "Menu created successfully",
+          menuId: (result as any).insertId,
+        });
     }
   );
 };
+
 
 export const getMenus = (req: Request, res: Response): void => {
   const { restaurantId } = req.params;
