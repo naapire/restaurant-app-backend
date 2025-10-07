@@ -1,11 +1,22 @@
 import express from "express";
-import { createRestaurant, deleteRestaurant, getAllRestaurant, getRestaurantById, updateRestaurant } from "../controllers/restaurantcontrollers.ts";
+import {
+  createRestaurant,
+  deleteRestaurant,
+  getAllRestaurant,
+  getRestaurantById,
+  updateRestaurant,
+} from "../controllers/restaurantcontrollers.ts";
 
 const restaurantRoutes = express.Router();
 
 /**
  * @swagger
  * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
  *   schemas:
  *     Restaurant:
  *       type: object
@@ -21,13 +32,20 @@ const restaurantRoutes = express.Router();
  */
 
 /**
- // Restaurants
+ * @swagger
+ * tags:
+ *   - name: Restaurants
+ *     description: Restaurant management (Admin only)
+ */
+
 /**
  * @swagger
- * /createRestaurant:
+ * /restaurants:
  *   post:
- *     summary: Create a restaurant
+ *     summary: Create a restaurant (Admin only)
  *     tags: [Restaurants]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -46,20 +64,36 @@ const restaurantRoutes = express.Router();
  *               location:
  *                 type: string
  *     responses:
- *       200:
+ *       201:
  *         description: Restaurant created successfully
+ *       401:
+ *         description: Unauthorized - Missing or invalid token
+ *       403:
+ *         description: Forbidden - Admins only
  */
-restaurantRoutes.post("/createRestaurant", createRestaurant);
+restaurantRoutes.post("/restaurants", createRestaurant);
 
 /**
  * @swagger
  * /restaurants:
  *   get:
- *     summary: Get all restaurants
+ *     summary: Get all restaurants (Admin only)
  *     tags: [Restaurants]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of restaurants
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Restaurant'
+ *       401:
+ *         description: Unauthorized - Missing or invalid token
+ *       403:
+ *         description: Forbidden - Admins only
  */
 restaurantRoutes.get("/restaurants", getAllRestaurant);
 
@@ -67,8 +101,10 @@ restaurantRoutes.get("/restaurants", getAllRestaurant);
  * @swagger
  * /restaurants/{id}:
  *   get:
- *     summary: Get a restaurant by id
+ *     summary: Get a restaurant by id (Admin only)
  *     tags: [Restaurants]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -78,6 +114,10 @@ restaurantRoutes.get("/restaurants", getAllRestaurant);
  *     responses:
  *       200:
  *         description: Restaurant object
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
 restaurantRoutes.get("/restaurants/:id", getRestaurantById);
 
@@ -85,8 +125,10 @@ restaurantRoutes.get("/restaurants/:id", getRestaurantById);
  * @swagger
  * /restaurants/{id}:
  *   put:
- *     summary: Update a restaurant by id
+ *     summary: Update a restaurant by id (Admin only)
  *     tags: [Restaurants]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -109,6 +151,10 @@ restaurantRoutes.get("/restaurants/:id", getRestaurantById);
  *     responses:
  *       200:
  *         description: Restaurant updated successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
 restaurantRoutes.put("/restaurants/:id", updateRestaurant);
 
@@ -116,8 +162,10 @@ restaurantRoutes.put("/restaurants/:id", updateRestaurant);
  * @swagger
  * /restaurants/{id}:
  *   delete:
- *     summary: Delete a restaurant by id
+ *     summary: Delete a restaurant by id (Admin only)
  *     tags: [Restaurants]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -127,6 +175,11 @@ restaurantRoutes.put("/restaurants/:id", updateRestaurant);
  *     responses:
  *       200:
  *         description: Restaurant deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
 restaurantRoutes.delete("/restaurants/:id", deleteRestaurant);
-export default restaurantRoutes
+
+export default restaurantRoutes;
