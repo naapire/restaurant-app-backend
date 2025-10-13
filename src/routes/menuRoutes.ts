@@ -6,6 +6,7 @@ import {
   getMenuById,
   updateMenu,
   deleteMenu,
+  getAllMenus
 } from "../controllers/menucontroller.ts";
 
 const menuRoutes = express.Router();
@@ -166,6 +167,8 @@ menuRoutes.post(
 );
 
 menuRoutes.get("/restaurants/:restaurantId/menus", getMenus);
+
+menuRoutes.get("/menus", getAllMenus);
 
 menuRoutes.get("/restaurants/:restaurantId/menus/:menuId", getMenuById);
 

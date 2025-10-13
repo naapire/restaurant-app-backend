@@ -1,4 +1,6 @@
 import express from "express";
+import multer from "multer";
+
 import {
   createRestaurant,
   deleteRestaurant,
@@ -8,6 +10,8 @@ import {
 } from "../controllers/restaurantcontrollers.ts";
 
 const restaurantRoutes = express.Router();
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 /**
  * @swagger
@@ -71,7 +75,7 @@ const restaurantRoutes = express.Router();
  *       403:
  *         description: Forbidden - Admins only
  */
-restaurantRoutes.post("/restaurants", createRestaurant);
+restaurantRoutes.post("/restaurants", upload.single("image"), createRestaurant);
 
 /**
  * @swagger
@@ -156,7 +160,7 @@ restaurantRoutes.get("/restaurants/:id", getRestaurantById);
  *       403:
  *         description: Forbidden
  */
-restaurantRoutes.put("/restaurants/:id", updateRestaurant);
+restaurantRoutes.put("/restaurants/:id", upload.single("image"), updateRestaurant);
 
 /**
  * @swagger

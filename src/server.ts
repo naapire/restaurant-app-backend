@@ -9,15 +9,20 @@ import menuItemRoutes from "./routes/itemsRoutes.ts";
 import riderRoutes from "./routes/riderRoutes.ts";
 import cartRoutes from "./routes/cartRoutes.ts";
 import orderRoutes from "./routes/orderRoutes.ts";
+import helmet from "helmet"
+
 
 dotenv.config();
 
 const port = Number(process.env.SERVER_PORT) || 5000;
 const app = express();
 
+ 
+
 // ✅ Built-in middlewares
 app.use(express.json()); // parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // parse form-urlencoded bodies
+app.use(helmet());
 
 // ✅ Enable CORS
 app.use(
