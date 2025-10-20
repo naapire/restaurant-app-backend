@@ -1,5 +1,5 @@
 import multer from "multer";
-import cloudinary from "../../cloudinary.ts";
+import cloudinary from "../cloudinary.ts";
 import fs from "fs";
 import type { Request, Response, NextFunction } from "express";
 

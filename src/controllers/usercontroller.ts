@@ -1,4 +1,3 @@
-// src/controllers/usercontroller.ts
 import type { Request, Response } from "express";
 import db from "../config/db.ts";
 import type { RowDataPacket, ResultSetHeader } from "mysql2";
@@ -14,27 +13,22 @@ if (!JWT_SECRET) {
   throw new Error("JWT_SECRET must be set in environment variables");
 }
 
-/**
- * Helper: remove sensitive fields from user object
- */
+/** Helper: remove password before sending user */
 const sanitizeUser = (userRow: any) => {
   const { password, ...safe } = userRow;
   return safe;
 };
 
-/**
- * Sign up - create user, create rider record if role === 'rider', return JWT
- * NOTE: For production, DO NOT allow public creation of admin accounts.
- *       Either remove `role` from public signup or enforce server-side checks.
- */
+/** ✅ SIGNUP CONTROLLER */
 export const signUp = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, email, password, location, role } = req.body as {
+    const { name, email, password, location, role, restaurantId } = req.body as {
       name: string;
       email: string;
       password: string;
       location?: string;
       role?: string;
+      restaurantId?: number;
     };
 
     if (!name || !email || !password) {
@@ -42,38 +36,28 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Prevent duplicate email
-    const [existing] = await db.query<RowDataPacket[]>("SELECT id FROM users WHERE email = ?", [email]);
+    // Check if email already exists
+    const [existing] = await db.query<RowDataPacket[]>(
+      "SELECT id FROM users WHERE email = ?",
+      [email]
+    );
     if (existing.length > 0) {
       res.status(409).json({ message: "Email already registered" });
       return;
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const finalRole = role ?? "customer";
 
     const [insertResult] = await db.query<ResultSetHeader>(
-      "INSERT INTO users (name, email, password, location, role) VALUES (?, ?, ?, ?, ?)",
-      [name, email, hashedPassword, location ?? null, role ?? "customer"]
+      "INSERT INTO users (name, email, password, location, role, restaurantId) VALUES (?, ?, ?, ?, ?, ?)",
+      [name, email, hashedPassword, location ?? null, finalRole, restaurantId ?? null]
     );
 
     const userId = insertResult.insertId;
 
-    // If role is rider, create riders entry (non-blocking; log errors)
-    if ((role ?? "").toLowerCase() === "rider") {
-      try {
-        await db.query<ResultSetHeader>(
-          "INSERT INTO riders (user_id, availability_status, rating) VALUES (?, 'offline', NULL)",
-          [userId]
-        );
-      } catch (riderErr: any) {
-        console.error("Failed to create rider row for user:", riderErr);
-        // don't fail signup because of rider creation failure
-      }
-    }
-
-    // Issue JWT (cast SignOptions so TS chooses the correct overload)
     const token = jwt.sign(
-      { id: userId, email, role: role ?? "customer" },
+      { id: userId, email, role: finalRole, restaurantId: restaurantId ?? null },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN } as jwt.SignOptions
     );
@@ -81,7 +65,7 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
     res.status(201).json({
       message: "Signup successful",
       token,
-      user: { id: userId, name, email, role: role ?? "customer", location: location ?? null },
+      user: { id: userId, name, email, role: finalRole, restaurantId: restaurantId ?? null, location: location ?? null },
     });
   } catch (error: any) {
     console.error("signUp error:", error);
@@ -89,9 +73,7 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-/**
- * Login - verify credentials, return JWT
- */
+/** ✅ LOGIN CONTROLLER */
 export const loginUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body as { email: string; password: string };
@@ -106,7 +88,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const user = rows[0] as any;
+    const user = rows[0];
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       res.status(401).json({ message: "Invalid credentials" });
@@ -114,7 +96,13 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
     }
 
     const token = jwt.sign(
-      { id: user.id,name: user.name, email: user.email, role: user.role },
+      {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        restaurantId: user.restaurantId ?? null,
+      },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN } as jwt.SignOptions
     );
@@ -130,25 +118,28 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-/**
- * Update user - allow partial update of name and email (no password change here)
- */
+/** ✅ UPDATE USER */
 export const updateUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { name, email } = req.body as { name?: string; email?: string };
+    const { name, email, role, restaurantId } = req.body as {
+      name?: string;
+      email?: string;
+      role?: string;
+      restaurantId?: number | null;
+    };
 
-    if (!name && !email) {
+    if (!name && !email && !role && restaurantId === undefined) {
       res.status(400).json({ message: "Nothing to update" });
       return;
     }
 
-    // If email changed, ensure uniqueness
+    // Check email uniqueness
     if (email) {
-      const [existing] = await db.query<RowDataPacket[]>("SELECT id FROM users WHERE email = ? AND id != ?", [
-        email,
-        id,
-      ]);
+      const [existing] = await db.query<RowDataPacket[]>(
+        "SELECT id FROM users WHERE email = ? AND id != ?",
+        [email, id]
+      );
       if (existing.length > 0) {
         res.status(409).json({ message: "Email already in use" });
         return;
@@ -156,8 +147,13 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
     }
 
     const [result] = await db.query<ResultSetHeader>(
-      "UPDATE users SET name = COALESCE(?, name), email = COALESCE(?, email) WHERE id = ?",
-      [name ?? null, email ?? null, id]
+      `UPDATE users 
+       SET name = COALESCE(?, name), 
+           email = COALESCE(?, email),
+           role = COALESCE(?, role),
+           restaurantId = COALESCE(?, restaurantId)
+       WHERE id = ?`,
+      [name ?? null, email ?? null, role ?? null, restaurantId ?? null, id]
     );
 
     if (result.affectedRows === 0) {
@@ -172,9 +168,7 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-/**
- * Delete user
- */
+/** ✅ DELETE USER */
 export const deleteUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -190,15 +184,49 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-/**
- * Get all users (safe fields)
- */
+/** ✅ GET ALL USERS */
 export const getAllUsers = async (req: Request, res: Response): Promise<void> => {
   try {
-    const [rows] = await db.query<RowDataPacket[]>("SELECT id, name, email, location, role, created_at FROM users");
+    const [rows] = await db.query<RowDataPacket[]>(
+      "SELECT id, name, email, location, role, restaurantId, created_at FROM users"
+    );
     res.status(200).json(rows);
   } catch (error: any) {
     console.error("getAllUsers error:", error);
     res.status(500).json({ error: "Failed to fetch users" });
+  }
+};
+
+/** ✅ ASSIGN MANAGER */
+export const assignManager = async (req: Request, res: Response) => {
+  try {
+    const { email, restaurantId, role } = req.body as {
+      email?: string;
+      restaurantId?: number;
+      role?: string;
+    };
+
+    if (!email || !restaurantId) {
+      return res.status(400).json({ message: "Email and restaurantId are required." });
+    }
+
+    // Check if user exists
+    const [userRows] = await db.query<RowDataPacket[]>("SELECT * FROM users WHERE email = ?", [email]);
+    if (userRows.length === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const finalRole = role ?? "manager";
+
+    // Update user role and restaurantId
+    await db.query<ResultSetHeader>(
+      "UPDATE users SET role = ?, restaurantId = ? WHERE email = ?",
+      [finalRole, restaurantId, email]
+    );
+
+    return res.status(200).json({ message: `User has been assigned as ${finalRole} successfully.` });
+  } catch (error: any) {
+    console.error("assignManager error:", error);
+    return res.status(500).json({ message: "Server error while assigning manager." });
   }
 };

@@ -9,6 +9,8 @@ import menuItemRoutes from "./routes/itemsRoutes.ts";
 import riderRoutes from "./routes/riderRoutes.ts";
 import cartRoutes from "./routes/cartRoutes.ts";
 import orderRoutes from "./routes/orderRoutes.ts";
+import adminRoutes from "./routes/adminRoutes.ts";
+import rolesRoutes from "./routes/rolesRoutes.ts";
 import helmet from "helmet"
 
 
@@ -40,6 +42,8 @@ app.use("/api", menuItemRoutes);
 app.use("/api", riderRoutes);
 app.use("/api", cartRoutes);
 app.use("/api", orderRoutes);
+app.use("/api", adminRoutes);
+app.use("/api", rolesRoutes);
 
 // ✅ Swagger documentation
 swaggerDocs(app, port);

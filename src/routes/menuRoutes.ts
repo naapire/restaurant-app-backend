@@ -8,6 +8,7 @@ import {
   deleteMenu,
   getAllMenus
 } from "../controllers/menucontroller.ts";
+import { authMiddleware } from "../middleware/authmiddleware.ts";
 
 const menuRoutes = express.Router();
 
@@ -163,10 +164,11 @@ const upload = multer({ storage });
 menuRoutes.post(
   "/restaurants/:restaurantId/menus",
   upload.single("image"),
+  
   createMenu
 );
 
-menuRoutes.get("/restaurants/:restaurantId/menus", getMenus);
+menuRoutes.get("/restaurants/:restaurantId/menus",  getMenus);
 
 menuRoutes.get("/menus", getAllMenus);
 
@@ -175,9 +177,10 @@ menuRoutes.get("/restaurants/:restaurantId/menus/:menuId", getMenuById);
 menuRoutes.put(
   "/restaurants/:restaurantId/menus/:menuId",
   upload.single("image"),
+  authMiddleware,
   updateMenu
 );
 
-menuRoutes.delete("/restaurants/:restaurantId/menus/:menuId", deleteMenu);
+menuRoutes.delete("/restaurants/:restaurantId/menus/:menuId",  deleteMenu);
 
 export default menuRoutes;

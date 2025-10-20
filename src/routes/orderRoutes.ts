@@ -6,7 +6,7 @@ import {
   updateOrderStatus,
   assignRider,
 } from "../controllers/ordercontroller.ts";
-import { authMiddleware } from "../middleware/authmiddleware.ts";
+import { authMiddleware, isAdmin } from "../middleware/authmiddleware.ts";
 
 const orderRoutes = express.Router();
 
@@ -65,7 +65,7 @@ const orderRoutes = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Order'
  */
-orderRoutes.post("/orders", authMiddleware, createOrder);
+orderRoutes.post("/orders", authMiddleware,  createOrder);
 
 /**
  * @swagger
@@ -83,7 +83,7 @@ orderRoutes.post("/orders", authMiddleware, createOrder);
  *       "200":
  *         description: List of orders
  */
-orderRoutes.get("/orders", authMiddleware, getOrders);
+orderRoutes.get("/orders", authMiddleware, isAdmin, getOrders);
 
 /**
  * @swagger
@@ -107,7 +107,7 @@ orderRoutes.get("/orders", authMiddleware, getOrders);
  *             schema:
  *               $ref: '#/components/schemas/Order'
  */
-orderRoutes.get("/orders/:id", authMiddleware, getOrderById);
+orderRoutes.get("/orders/:id", authMiddleware,isAdmin, getOrderById);
 
 /**
  * @swagger
@@ -168,6 +168,6 @@ orderRoutes.put("/orders/:id/status", authMiddleware, updateOrderStatus);
  *       "200":
  *         description: Rider assigned successfully
  */
-orderRoutes.put("/orders/:id/assign", authMiddleware, assignRider);
+orderRoutes.put("/orders/:id/assign", authMiddleware, isAdmin, assignRider);
 
 export default orderRoutes;

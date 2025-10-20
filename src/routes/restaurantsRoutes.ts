@@ -1,5 +1,6 @@
 import express from "express";
 import multer from "multer";
+import { authMiddleware, isAdmin , isManagerForRestaurant } from "../middleware/authmiddleware.ts";
 
 import {
   createRestaurant,
@@ -8,6 +9,7 @@ import {
   getRestaurantById,
   updateRestaurant,
 } from "../controllers/restaurantcontrollers.ts";
+
 
 const restaurantRoutes = express.Router();
 const storage = multer.memoryStorage();
@@ -75,7 +77,7 @@ const upload = multer({ storage });
  *       403:
  *         description: Forbidden - Admins only
  */
-restaurantRoutes.post("/restaurants", upload.single("image"), createRestaurant);
+restaurantRoutes.post("/restaurants", upload.single("image"), authMiddleware, isAdmin, createRestaurant);
 
 /**
  * @swagger
@@ -160,7 +162,7 @@ restaurantRoutes.get("/restaurants/:id", getRestaurantById);
  *       403:
  *         description: Forbidden
  */
-restaurantRoutes.put("/restaurants/:id", upload.single("image"), updateRestaurant);
+restaurantRoutes.put("/restaurants/:id", upload.single("image"),authMiddleware, isAdmin, updateRestaurant);
 
 /**
  * @swagger

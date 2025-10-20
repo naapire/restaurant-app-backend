@@ -6,6 +6,7 @@ import {
   updateMenuItem,
   deleteMenuItem,
   getAllMenuItems,
+  getAllMenuItemsByRestaurant
 } from "../controllers/menuitems.ts";
 import upload, { uploadToCloudinary } from "../middleware/upload.ts";
 
@@ -232,6 +233,44 @@ menuItemRoutes.get(
 menuItemRoutes.delete(
   "/restaurants/:restaurantId/menus/:menuId/menuItems/:itemId",
   deleteMenuItem
+);
+
+/**
+ * @swagger
+ * /restaurants/{restaurantId}/menuitems:
+ *   get:
+ *     summary: Get all menu items in a restaurant (across all menus)
+ *     description: Retrieve all menu items that belong to a specific restaurant, regardless of which menu they belong to.
+ *     tags: [MenuItems]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: restaurantId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the restaurant to fetch menu items for.
+ *     responses:
+ *       200:
+ *         description: List of all menu items in the restaurant.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/MenuItem'
+ *       401:
+ *         description: Unauthorized - Missing or invalid token.
+ *       403:
+ *         description: Forbidden - Only managers or admins can access this route.
+ *       500:
+ *         description: Failed to fetch menu items.
+ */
+menuItemRoutes.get(
+  "/restaurants/:restaurantId/menuitems",
+  
+  getAllMenuItemsByRestaurant
 );
 
 export default menuItemRoutes;

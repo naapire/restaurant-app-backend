@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import db from "../config/db.ts";
 import type { RowDataPacket, ResultSetHeader } from "mysql2";
-import { cloudinaryUpload } from "../../utils/uploadCloudinary.ts";
+import { cloudinaryUpload } from "../utils/uploadCloudinary.ts";
 
 /**
  * ✅ Create a restaurant (with image upload)

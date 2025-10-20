@@ -5,7 +5,9 @@ import {
   loginUser,
   signUp,
   updateUser,
+  assignManager,
 } from "../controllers/usercontroller.ts";
+import { authMiddleware, isAdmin } from "../middleware/authmiddleware.ts";
 
 const routes = express.Router();
 
@@ -26,6 +28,9 @@ const routes = express.Router();
  *           type: string
  *         role:
  *           type: string
+ *         restaurantId:
+ *           type: integer
+ *           description: ID of the restaurant associated with the user
  *     SignUpRequest:
  *       type: object
  *       required:
@@ -35,14 +40,23 @@ const routes = express.Router();
  *       properties:
  *         name:
  *           type: string
+ *           example: John Doe
  *         email:
  *           type: string
+ *           example: johndoe@gmail.com
  *         password:
  *           type: string
+ *           example: password123
  *         location:
  *           type: string
+ *           example: Accra
  *         role:
  *           type: string
+ *           example: manager
+ *         restaurantId:
+ *           type: integer
+ *           example: 2
+ *           description: Restaurant ID the user is associated with
  *     LoginRequest:
  *       type: object
  *       required:
@@ -51,8 +65,10 @@ const routes = express.Router();
  *       properties:
  *         email:
  *           type: string
+ *           example: johndoe@gmail.com
  *         password:
  *           type: string
+ *           example: password123
  */
 
 /**
@@ -136,6 +152,9 @@ routes.post("/login", loginUser);
  *                 type: string
  *               role:
  *                 type: string
+ *               restaurantId:
+ *                 type: integer
+ *                 example: 3
  *     responses:
  *       200:
  *         description: User updated successfully
@@ -169,6 +188,8 @@ routes.delete("/users/:id", deleteUser);
  * /users:
  *   get:
  *     summary: Get all users
+ *    security:
+ *       - bearerAuth: []
  *     tags: [Users]
  *     responses:
  *       200:
@@ -180,6 +201,49 @@ routes.delete("/users/:id", deleteUser);
  *               items:
  *                 $ref: '#/components/schemas/User'
  */
-routes.get("/users", getAllUsers);
+routes.get("/users",authMiddleware, isAdmin, getAllUsers);
+
+/**
+ * @swagger
+ * /assign-manager:
+ *   post:
+ *     summary: Assign an existing user as a manager to a restaurant
+ *     description: This endpoint allows a super admin to promote an existing user by email and link them to a specific restaurant.
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - restaurantId
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: johndoe@gmail.com
+ *               restaurantId:
+ *                 type: integer
+ *                 example: 3
+ *     responses:
+ *       200:
+ *         description: User has been successfully assigned as manager
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: User has been assigned as manager successfully.
+ *       400:
+ *         description: Missing or invalid parameters
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error while assigning manager
+ */
+routes.post("/assign-manager", assignManager);
 
 export default routes;

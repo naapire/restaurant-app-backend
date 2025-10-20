@@ -1,19 +1,24 @@
 import type { Request, Response } from "express";
 import db from "../config/db.ts";
 import type { RowDataPacket, ResultSetHeader } from "mysql2";
-import { cloudinaryUpload } from "../../utils/uploadCloudinary.ts";
+import { cloudinaryUpload } from "../utils/uploadCloudinary.ts";
 
-// ✅ Create a menuItem under a menu
-export const createMenuItem = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+
+export const createMenuItem = async (req: Request, res: Response): Promise<void> => {
   try {
     const { restaurantId, menuId } = req.params;
-    const { name, deliverySpeed, deliveryFee, price } = req.body;
+    const { name, deliverySpeed, deliveryFee, image, price } = req.body;
 
-    const imageUrl: string | null = (req as any).cloudinaryUrl || null;
+    if (!name || !deliverySpeed || !deliveryFee || !price) {
+      res.status(400).json({ error: "Missing required fields." });
+      return;
+    }
 
+    // ✅ Upload image if provided
+    let imageUrl: string | null = null;
+    if (req.file) {
+      imageUrl = await cloudinaryUpload(req.file.buffer);
+    }
 
     const sql = `
       INSERT INTO menuItems (name, menu_id, deliverySpeed, deliveryFee, price, image, restaurant_id) 
@@ -23,25 +28,29 @@ export const createMenuItem = async (
       name,
       menuId,
       deliverySpeed,
-      deliveryFee,
-      price,
-      imageUrl,
+      parseFloat(deliveryFee),
+      parseFloat(price),
+      image,
       restaurantId,
     ];
+
     const [result] = await db.query<ResultSetHeader>(sql, values);
 
-    // 🔹 Fetch the full created item
+    // ✅ Fetch the created item
     const [rows] = await db.query<RowDataPacket[]>(
       `SELECT * FROM menuItems WHERE id = ?`,
       [result.insertId]
     );
 
     const item = rows[0];
-    // ✅ Convert numeric fields so frontend gets numbers, not strings
     item.deliveryFee = item.deliveryFee ? Number(item.deliveryFee) : null;
     item.price = item.price ? Number(item.price) : null;
+    item.image = imageUrl;
 
-    res.status(201).json(item);
+    res.status(201).json({
+      message: "Menu item created successfully",
+      ...item,
+    });
   } catch (err) {
     console.error("Error creating menu item:", err);
     res.status(500).json({ error: "Failed to create menu item." });
@@ -59,7 +68,7 @@ export const getAllMenuItems = async (
        FROM menuItems mi
        JOIN menu m ON mi.menu_id = m.id
        JOIN restaurants r ON mi.restaurant_id = r.id
-       ORDER BY mi.created_at DESC`
+       ORDER BY mi.created_at DESC`.
     );
 
     res.json(results);
@@ -123,6 +132,7 @@ export const getMenuItemById = async (
     console.error("Error fetching menu item:", err);
     res.status(500).json({ error: "Failed to fetch menu item." });
   }
+  
 };
 
 // ✅ Update a menuItem
@@ -131,36 +141,28 @@ export const updateMenuItem = async (req: Request, res: Response): Promise<void>
     const { restaurantId, menuId, itemId } = req.params;
     const { name, deliverySpeed, deliveryFee, price } = req.body;
 
-    // ✅ Cloudinary URL will be attached by middleware if image was uploaded
-    const imageUrl: string | null = (req as any).cloudinaryUrl || null;
-
-    // ✅ Validate required fields (avoid 400 errors)
-    if (!name || !deliverySpeed || !deliveryFee || !price) {
-      res.status(400).json({ error: "Missing required fields." });
-      return;
+    // ✅ Upload new image if provided
+    let imageUrl: string | null = null;
+    if (req.file) {
+      imageUrl = await cloudinaryUpload(req.file.buffer);
     }
 
-    // ✅ Ensure numeric fields are valid
-    const parsedDeliveryFee = parseFloat(deliveryFee);
-    const parsedPrice = parseFloat(price);
-
-    if (isNaN(parsedDeliveryFee) || isNaN(parsedPrice)) {
-      res.status(400).json({ error: "Invalid number format for deliveryFee or price." });
-      return;
-    }
-
-    // ✅ Update query (preserves old image if no new one provided)
     const sql = `
       UPDATE menuItems
-      SET name = ?, deliverySpeed = ?, deliveryFee = ?, price = ?, image = IFNULL(?, image)
+      SET 
+        name = COALESCE(?, name),
+        deliverySpeed = COALESCE(?, deliverySpeed),
+        deliveryFee = COALESCE(?, deliveryFee),
+        price = COALESCE(?, price),
+        image = COALESCE(?, image)
       WHERE id = ? AND menu_id = ? AND restaurant_id = ?
     `;
 
     const values = [
-      name,
-      deliverySpeed,
-      parsedDeliveryFee,
-      parsedPrice,
+      name ?? null,
+      deliverySpeed ?? null,
+      deliveryFee ? parseFloat(deliveryFee) : null,
+      price ? parseFloat(price) : null,
       imageUrl,
       itemId,
       menuId,
@@ -169,16 +171,16 @@ export const updateMenuItem = async (req: Request, res: Response): Promise<void>
 
     const [result] = await db.query<ResultSetHeader>(sql, values);
 
-    // ✅ Handle case where no rows were updated
     if (result.affectedRows === 0) {
-      res.status(404).json({ error: "Menu item not found or no changes made." });
+      res.status(404).json({ error: "Menu item not found" });
       return;
     }
 
     // ✅ Fetch updated record
-    const [rows] = await db.query<RowDataPacket[]>(`SELECT * FROM menuItems WHERE id = ?`, [
-      itemId,
-    ]);
+    const [rows] = await db.query<RowDataPacket[]>(
+      `SELECT * FROM menuItems WHERE id = ?`,
+      [itemId]
+    );
 
     const item = rows[0];
     if (item) {
@@ -186,16 +188,15 @@ export const updateMenuItem = async (req: Request, res: Response): Promise<void>
       item.price = item.price ? Number(item.price) : null;
     }
 
-    res.json({
+    res.status(200).json({
       message: "Menu item updated successfully",
-      item,
+      ...item,
     });
   } catch (err) {
     console.error("Error updating menu item:", err);
     res.status(500).json({ error: "Failed to update menu item." });
   }
 };
-
 
 // ✅ Delete a menuItem
 export const deleteMenuItem = async (
@@ -221,3 +222,37 @@ export const deleteMenuItem = async (
     res.status(500).json({ error: "Failed to delete menu item." });
   }
 };
+
+// ✅ Get all menuItems for a specific restaurant (across all menus)
+export const getAllMenuItemsByRestaurant = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { restaurantId } = req.params;
+
+    // ✅ Join menus and restaurant info for richer response
+    const [results] = await db.query<RowDataPacket[]>(
+      `SELECT mi.*, m.name AS menu_name, r.restaurant_name AS restaurant_name
+       FROM menuItems mi
+       JOIN menu m ON mi.menu_id = m.id
+       JOIN restaurants r ON mi.restaurant_id = r.id
+       WHERE mi.restaurant_id = ?
+       ORDER BY mi.created_at DESC`,
+      [restaurantId]
+    );
+
+    // ✅ Convert deliveryFee & price to numbers
+    const formatted = results.map((item: any) => ({
+      ...item,
+      deliveryFee: item.deliveryFee ? Number(item.deliveryFee) : null,
+      price: item.price ? Number(item.price) : null,
+    }));
+
+    res.json(formatted);
+  } catch (err) {
+    console.error("Error fetching menu items for restaurant:", err);
+    res.status(500).json({ error: "Failed to fetch menu items for this restaurant." });
+  }
+};
+
