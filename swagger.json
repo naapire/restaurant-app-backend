@@ -1,0 +1,296 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Restaurant App API",
+    "version": "1.0.0",
+    "description": "API documentation for Restaurant ordering system (Users, Riders, Restaurants, Orders)."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000/api"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "UserSignup": {
+        "type": "object",
+        "required": ["name", "email", "password"],
+        "properties": {
+          "name": { "type": "string", "example": "John Doe" },
+          "email": { "type": "string", "example": "john@example.com" },
+          "password": { "type": "string", "example": "mypassword123" },
+          "location": { "type": "string", "example": "Accra" },
+          "role": { "type": "string", "example": "customer" }
+        }
+      },
+      "UserLogin": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "example": "john@example.com" },
+          "password": { "type": "string", "example": "mypassword123" }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "required": ["restaurant_id", "items"],
+        "properties": {
+          "restaurant_id": { "type": "integer", "example": 1 },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "menuItemId": { "type": "integer", "example": 2 },
+                "quantity": { "type": "integer", "example": 3 }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/users/signup": {
+      "post": {
+        "summary": "User signup (Customer, Rider, Admin)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UserSignup" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User registered successfully" },
+          "400": { "description": "Missing or invalid data" }
+        }
+      }
+    },
+    "/users/login": {
+      "post": {
+        "summary": "User login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UserLogin" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login successful, returns JWT" },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "summary": "Get all users (admin only)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "List of users" }
+        }
+      }
+    },
+    "/users/{id}": {
+      "patch": {
+        "summary": "Update a user",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "email": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "User updated successfully" }
+        }
+      },
+      "delete": {
+        "summary": "Delete a user",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "User deleted successfully" }
+        }
+      }
+    },
+    "/restaurants": {
+      "get": {
+        "summary": "Get all restaurants",
+        "responses": {
+          "200": { "description": "List of restaurants" }
+        }
+      },
+      "post": {
+        "summary": "Create a restaurant (admin only)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["restaurant_name", "address", "location"],
+                "properties": {
+                  "restaurant_name": { "type": "string", "example": "Pizza Hub" },
+                  "address": { "type": "string", "example": "Ring Road, Accra" },
+                  "location": { "type": "string", "example": "Accra" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Restaurant created" }
+        }
+      }
+    },
+    "/restaurants/{id}": {
+      "get": {
+        "summary": "Get restaurant by ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Restaurant found" },
+          "404": { "description": "Not found" }
+        }
+      },
+      "patch": {
+        "summary": "Update a restaurant (admin only)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "restaurant_name": { "type": "string" },
+                  "address": { "type": "string" },
+                  "location": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Restaurant updated" }
+        }
+      },
+      "delete": {
+        "summary": "Delete a restaurant (admin only)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Restaurant deleted" }
+        }
+      }
+    },
+    "/riders": {
+      "get": {
+        "summary": "Get all riders",
+        "responses": {
+          "200": { "description": "List of riders" }
+        }
+      }
+    },
+    "/riders/{id}": {
+      "get": {
+        "summary": "Get rider by ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Rider details" }
+        }
+      },
+      "delete": {
+        "summary": "Delete a rider (admin only)",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Rider deleted" }
+        }
+      }
+    },
+    "/riders/{id}/status": {
+      "patch": {
+        "summary": "Update rider availability status",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "availability_status": {
+                    "type": "string",
+                    "enum": ["available", "busy", "offline"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Rider status updated" }
+        }
+      }
+    },
+    "/orders": {
+      "get": {
+        "summary": "Get all orders (admin) or own orders (customer)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "List of orders" }
+        }
+      },
+      "post": {
+        "summary": "Create a new order",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Order" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Order created successfully" }
+        }
+      }
+    }
+  }
+}
